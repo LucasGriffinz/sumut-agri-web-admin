@@ -16,6 +16,12 @@ export default function ManajemenPengguna() {
   const [role, setRole] = useState('PETANI');
   const [kabupatenKota, setKabupatenKota] = useState('');
 
+  // 🔑 STATE BARU UNTUK MODAL POP-UP RESET PASSWORD
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
   const token = localStorage.getItem('admin_token');
 
   const fetchUsers = async () => {
@@ -36,7 +42,7 @@ export default function ManajemenPengguna() {
         return;
       }
 
-      if (!res.ok) throw new Error('Gagal mengambil daftar pengguna dari database lokal');
+      if (!res.ok) throw new Error('Gagal mengambil daftar pengguna dari database');
 
       const data = await res.json();
       setUsers(data);
@@ -59,8 +65,6 @@ export default function ManajemenPengguna() {
     setLoading(true);
 
     try {
-      // PERBAIKAN UTAMA: Paksa email input menjadi huruf kecil semua (lowercase) 
-      // untuk menghindari masalah ketidakcocokan karakter kapital saat login
       const cleanEmail = email.toLowerCase();
 
       const res = await fetch(`${API_BASE}/api/admin/users?role=${role}`, {
@@ -70,7 +74,7 @@ export default function ManajemenPengguna() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: cleanEmail, // Gunakan email yang sudah dibersihkan
+          email: cleanEmail,
           password: password,
           nama_lengkap: namaLengkap,
           kabupaten_kota: kabupatenKota || null
@@ -88,19 +92,58 @@ export default function ManajemenPengguna() {
         throw new Error(errData.detail || 'Gagal mendaftarkan pengguna baru');
       }
 
-      // Reset Form Input jika pendaftaran berhasil
       setNamaLengkap('');
       setEmail('');
       setPassword('');
       setRole('PETANI');
       setKabupatenKota('');
 
-      alert('Pengguna baru berhasil ditambahkan ke PostgreSQL lokal!');
-      fetchUsers(); // Refresh tabel data pengguna
+      alert('Pengguna baru berhasil ditambahkan!');
+      fetchUsers(); 
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔑 FUNGSI BARU TEMPAT MELETAKKAN CODE FETCH RESET PASSWORD
+  const handleExecuteResetPassword = async (e) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setResetLoading(true);
+    setError('');
+
+    try {
+      // CODE FETCH YANG ANDA MAKSUD DILETAKKAN DI SINI:
+      const res = await fetch(`${API_BASE}/api/users/${selectedUser.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Membawa token JWT Admin yang sedang login
+        },
+        body: JSON.stringify({ new_password: newPassword }),
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('admin_token');
+        navigate('/login');
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Gagal melakukan reset password');
+      }
+
+      alert(`Password untuk ${selectedUser.nama_lengkap} berhasil diubah!`);
+      setShowModal(false);
+      setNewPassword('');
+      setSelectedUser(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -198,13 +241,15 @@ export default function ManajemenPengguna() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kab/Kota</th>
+                {/* 🔑 TAMBAHAN KOLOM AKSI PADA HEAD TABEL */}
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-400 italic">
-                    Belum ada data pengguna di database lokal.
+                  <td colSpan={5} className="px-6 py-4 text-center text-gray-400 italic">
+                    Belum ada data pengguna di database.
                   </td>
                 </tr>
               ) : (
@@ -221,6 +266,15 @@ export default function ManajemenPengguna() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">{u.kabupaten_kota || '-'}</td>
+                    {/* 🔑 TAMBAHAN TOMBOL RESET DI SETIAP BARIS USER */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                      <button
+                        onClick={() => { setSelectedUser(u); setShowModal(true); }}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-3 py-1 rounded shadow-sm transition text-xs"
+                      >
+                        🔑 Reset Pwd
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -228,6 +282,47 @@ export default function ManajemenPengguna() {
           </table>
         </div>
       </div>
+
+      {/* 🔑 TAMBAHAN ELEMEN MODAL BOX POP-UP DI BAWAH HALAMAN */}
+      {showModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">🔄 Ubah Password Pengguna</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Anda akan mengganti password akun milik <strong className="text-green-700">{selectedUser.nama_lengkap}</strong> ({selectedUser.email}).
+            </p>
+            <form onSubmit={handleExecuteResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Masukkan Password Baru</label>
+                <input
+                  required
+                  type="text"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Ketik password baru..."
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); setSelectedUser(null); setNewPassword(''); }}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg transition text-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 text-sm"
+                >
+                  {resetLoading ? 'Menyimpan...' : 'Konfirmasi Ubah'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
