@@ -1,12 +1,23 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import Login from "./pages/Login";
 import Dashboard from './pages/Dashboard';
 import ManajemenPengguna from './pages/ManajemenPengguna';
 import ManajemenKomoditas from './pages/ManajemenKomoditas';
 import Layout from './components/Layout';
 
+// Komponen Tambahan: Memaksa layar HP/Laptop otomatis scroll ke atas saat pindah halaman
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 // 1. Komponen Pelindung (ProtectedRoute)
-// Berfungsi sebagai satpam jalur navigasi di level Frontend React
 const ProtectedRoute = () => {
   const token = localStorage.getItem('admin_token');
   
@@ -22,6 +33,9 @@ const ProtectedRoute = () => {
 function App() {
   return (
     <Router>
+      {/* Pasang ScrollToTop di dalam Router agar berjalan di setiap perpindahan halaman */}
+      <ScrollToTop />
+      
       <Routes>
         {/* Jalur Publik: Siapapun bisa mengakses halaman Login */}
         <Route path="/login" element={<Login />} />

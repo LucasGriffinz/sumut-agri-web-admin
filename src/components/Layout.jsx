@@ -1,63 +1,122 @@
+import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 
 export default function Layout() {
   const navigate = useNavigate();
+  // State untuk mengontrol buka/tutup menu di HP
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // PERBAIKAN 1: Sesuaikan pembacaan profil dengan kunci 'user_profile' dari Login.jsx yang baru
   const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
 
   const handleLogout = () => {
-    // PERBAIKAN 2: Hapus token utama dan profil secara permanen dari browser device ini
     localStorage.removeItem('admin_token');
     localStorage.removeItem('user_profile');
-
-    // Tambahan Opsional: Jika ingin memastikan semua data development lama bersih total, aktifkan baris di bawah:
-    // localStorage.clear();
-
-    // PERBAIKAN 3: Gunakan opsi replace: true agar user tidak bisa menekan tombol 'Back' browser
     navigate('/login', { replace: true });
-
-    // PERBAIKAN 4: Paksa browser memuat ulang memori (clear state cache React di RAM)
     window.location.reload();
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <nav className="bg-green-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold tracking-tight">Sumut Agri</h1>
-            <span className="text-green-200 text-sm hidden sm:inline">
-              Dashboard Admin
-            </span>
+      <nav className="bg-green-800 text-white shadow-lg sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Sisi Kiri: Logo / Judul */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold tracking-tight">Sumut Agri</h1>
+              <span className="text-green-200 text-sm hidden sm:inline">
+                Dashboard Admin
+              </span>
+            </div>
+
+            {/* Sisi Kanan: Menu untuk Desktop (Laptop) */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/dashboard" className="hover:text-green-200 transition text-sm font-medium">
+                Dashboard
+              </Link>
+              <Link to="/pengguna" className="hover:text-green-200 transition text-sm font-medium">
+                Pengguna
+              </Link>
+              <Link to="/komoditas" className="hover:text-green-200 transition text-sm font-medium">
+                Komoditas
+              </Link>
+              <span className="text-green-300 text-sm font-medium border-l border-green-700 pl-4">
+                {userProfile.email || 'Admin'}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-sm font-semibold transition shadow-sm"
+              >
+                Keluar
+              </button>
+            </div>
+
+            {/* Tombol Hamburger (Hanya Muncul di HP/Tablet) */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-white hover:text-green-200 focus:outline-none p-1"
+                aria-label="Toggle Menu"
+              >
+                {isMenuOpen ? (
+                  // Icon Silang (X) saat menu terbuka
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  // Icon Garis Tiga (Hamburger) saat menu tertutup
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="hover:text-green-200 transition text-sm">
-              Dashboard
-            </Link>
-            <Link to="/pengguna" className="hover:text-green-200 transition text-sm">
-              Pengguna
-            </Link>
-            <Link to="/komoditas" className="hover:text-green-200 transition text-sm">
-              Komoditas
-            </Link>
-            {/* Menampilkan email admin atau nama dari local storage */}
-            <span className="text-green-300 text-sm font-medium">
-              {userProfile.email || 'Admin'}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm font-semibold transition shadow-sm"
-            >
-              Keluar
-            </button>
-          </div>
+
+          {/* Menu Dropdown untuk HP (Hanya muncul jika isMenuOpen = true) */}
+          {isMenuOpen && (
+            <div className="md:hidden mt-3 pt-3 border-t border-green-700 flex flex-col gap-3 pb-2 animate-fadeIn">
+              <Link 
+                to="/dashboard" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:bg-green-700 px-3 py-2 rounded transition text-sm font-medium"
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/pengguna" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:bg-green-700 px-3 py-2 rounded transition text-sm font-medium"
+              >
+                Pengguna
+              </Link>
+              <Link 
+                to="/komoditas" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:bg-green-700 px-3 py-2 rounded transition text-sm font-medium"
+              >
+                Komoditas
+              </Link>
+              
+              <div className="border-t border-green-700 my-1"></div>
+              
+              <div className="px-3 py-1 text-green-300 text-sm font-medium truncate">
+                {userProfile.email || 'Admin'}
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 mx-3 my-1 py-2 rounded text-sm font-semibold transition shadow-sm text-center"
+              >
+                Keluar
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Konten halaman */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         <Outlet />
       </main>
     </div>
