@@ -52,7 +52,7 @@ export default function ManajemenKomoditas() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    loading(true);
+    setLoading(true); // ✅ SUDAH DIPERBAIKI: Menggunakan fungsi setter 'setLoading' yang benar agar tidak crash
 
     try {
       const res = await fetch(`${API_BASE}/api/komoditas/`, {
@@ -91,13 +91,13 @@ export default function ManajemenKomoditas() {
       {/* Judul adaptif */}
       <h2 className="text-xl sm:text-2xl font-bold text-green-800 tracking-tight">Manajemen Jenis Komoditas</h2>
 
-{error && (
-  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-lg text-xs sm:text-sm mt-4">
-    {error}
-  </div>
-)}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-lg text-xs sm:text-sm mt-4">
+          {error}
+        </div>
+      )}
 
-      {/* PERBAIKAN 1: Form layout diubah ke CSS Grid adaptif */}
+      {/* Form layout dengan CSS Grid adaptif */}
       <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-5 rounded-xl shadow grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-end">
         {/* Input Nama Komoditas */}
         <div className="sm:col-span-4">
@@ -155,7 +155,6 @@ export default function ManajemenKomoditas() {
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {/* PERBAIKAN 2: Padding baris disesuaikan dinamis */}
                 <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Komoditas</th>
                 <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Satuan Kerja</th>
                 <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deskripsi Tambahan</th>
@@ -173,7 +172,6 @@ export default function ManajemenKomoditas() {
                   <tr key={k.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap font-medium text-gray-900">{k.nama_komoditas}</td>
                     <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap text-gray-600">{k.satuan}</td>
-                    {/* PERBAIKAN 3: Membatasi lebar teks deskripsi di HP agar baris tabel tidak terlalu tinggi */}
                     <td className="px-4 py-3.5 sm:px-6 text-gray-500 max-w-[180px] sm:max-w-xs truncate">{k.deskripsi || '-'}</td>
                   </tr>
                 ))
