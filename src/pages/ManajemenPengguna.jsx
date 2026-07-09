@@ -16,7 +16,7 @@ export default function ManajemenPengguna() {
   const [role, setRole] = useState('PETANI');
   const [kabupatenKota, setKabupatenKota] = useState('');
 
-  // STATE UNTUK MODAL POP-UP RESET PASSWORD
+  // 🔑 STATE BARU UNTUK MODAL POP-UP RESET PASSWORD
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
@@ -59,10 +59,27 @@ export default function ManajemenPengguna() {
     fetchUsers();
   }, [token, navigate]);
 
-const handleRegisterUser = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true); // <--- UBAH JADI INI
+  const handleRegisterUser = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true); // ✅ PERBAIKAN 1: Menggunakan fungsi setter 'setLoading' yang benar agar tidak crash setelah di-build
+
+    try {
+      const cleanEmail = email.toLowerCase();
+
+      const res = await fetch(`${API_BASE}/api/admin/users?role=${role}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: password,
+          nama_lengkap: namaLengkap,
+          kabupaten_kota: kabupatenKota || null
+        }),
+      });
 
       if (res.status === 401) {
         localStorage.removeItem('admin_token');
@@ -90,18 +107,20 @@ const handleRegisterUser = async (e) => {
     }
   };
 
+  // 🔑 FUNGSI BARU TEMPAT MELETAKKAN CODE FETCH RESET PASSWORD
   const handleExecuteResetPassword = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
-    setResetLoading(true);
+    setResetLoading(true); // ✅ PERBAIKAN 2: Menggunakan fungsi setter 'setResetLoading' yang benar agar tidak crash setelah di-build
     setError('');
 
     try {
+      // CODE FETCH YANG ANDA MAKSUD DILETAKKAN DI SINI:
       const res = await fetch(`${API_BASE}/api/users/${selectedUser.id}/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}` // Membawa token JWT Admin yang sedang login
         },
         body: JSON.stringify({ new_password: newPassword }),
       });
@@ -129,85 +148,79 @@ const handleRegisterUser = async (e) => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Judul responsif */}
-      <h2 className="text-xl sm:text-2xl font-bold text-green-800 tracking-tight">Manajemen Pengguna (Petani & Petugas)</h2>
+    <div className="space-y-8">
+      <h2 className="text-2xl font-bold text-green-800">Manajemen Pengguna (Petani & Petugas)</h2>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-lg text-xs sm:text-sm leading-relaxed">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
           {error}
         </div>
       )}
 
-      {/* Form Tambah Pengguna Baru */}
-      <div className="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span>➕</span> Daftarkan Akun Pengguna Baru
-        </h3>
-        
-        {/* PERBAIKAN 1: Breakpoints grid diatur ulang (HP: 1 kolom, Tablet/Laptop: 2 kolom) */}
-        <form onSubmit={handleRegisterUser} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Form Tambah Pengguna Baru oleh Admin */}
+      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">➕ Daftarkan Akun Pengguna Baru</h3>
+        <form onSubmit={handleRegisterUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
             <input
               required
               type="text"
               value={namaLengkap}
               onChange={e => setNamaLengkap(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-base sm:text-sm bg-gray-50/30"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder="John Doe"
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               required
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-base sm:text-sm bg-gray-50/30"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder="johndoe@sumutagri.id"
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               required
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-base sm:text-sm bg-gray-50/30"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder="••••••••"
             />
           </div>
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Hak Akses (Role)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hak Akses (Role)</label>
             <select
               value={role}
               onChange={e => setRole(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-base sm:text-sm"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white"
             >
               <option value="PETANI">PETANI</option>
               <option value="PETUGAS">PETUGAS</option>
               <option value="ADMIN">ADMIN (Urusan Internal)</option>
             </select>
           </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Kabupaten / Kota Operasional</label>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kabupaten / Kota Operasional</label>
             <input
               type="text"
               value={kabupatenKota}
               onChange={e => setKabupatenKota(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none text-base sm:text-sm bg-gray-50/30"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
               placeholder="Misal: Deli Serdang, Karo, Simalungun, dll. (Kosongkan jika Admin)"
             />
           </div>
-          {/* PERBAIKAN 2: Tombol penuh di mobile, menyusut rapat kanan di desktop */}
-          <div className="sm:col-span-2 flex justify-end mt-2">
+          <div className="md:col-span-2 flex justify-end mt-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white font-semibold px-6 py-2.5 sm:py-2 rounded-lg transition duration-200 disabled:opacity-50 shadow-sm text-sm"
+              className="bg-green-700 hover:bg-green-800 text-white font-semibold px-6 py-2 rounded-lg transition duration-200 disabled:opacity-50 shadow"
             >
               {loading ? 'Mendaftarkan...' : 'Buat Akun'}
             </button>
@@ -217,50 +230,47 @@ const handleRegisterUser = async (e) => {
 
       {/* Tabel Pengguna Terdaftar */}
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gray-200 bg-gray-50/50">
-          <h3 className="font-semibold text-gray-800 text-sm sm:text-base flex items-center gap-2">
-            <span>📋</span> Anggota & Staff Pengguna Terdaftar
-          </h3>
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 className="font-semibold text-gray-800">📋 Anggota & Staff Pengguna Terdaftar</h3>
         </div>
-        <div className="overflow-x-auto subpixel-antialiased">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {/* PERBAIKAN 3: Padding header disesuaikan dinamis */}
-                <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama</th>
-                <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-4 py-3 sm:px-6 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kab/Kota</th>
-                <th className="px-4 py-3 sm:px-6 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kab/Kota</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 sm:px-6 text-center text-gray-400 italic">
+                  <td colSpan={5} className="px-6 py-4 text-center text-gray-400 italic">
                     Belum ada data pengguna di database.
                   </td>
                 </tr>
               ) : (
                 users.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap font-medium text-gray-900">{u.nama_lengkap}</td>
-                    <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap text-gray-600">{u.email}</td>
-                    <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 text-[11px] sm:text-xs font-semibold rounded-full ${
+                  <tr key={u.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{u.nama_lengkap}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">{u.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                         u.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
                         u.role === 'PETUGAS' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
                       }`}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap text-gray-500">{u.kabupaten_kota || '-'}</td>
-                    <td className="px-4 py-3.5 sm:px-6 whitespace-nowrap text-center text-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{u.kabupaten_kota || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                       <button
                         onClick={() => { setSelectedUser(u); setShowModal(true); }}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-2.5 py-1 rounded shadow-sm transition-colors text-xs inline-flex items-center gap-1"
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-3 py-1 rounded shadow-sm transition text-xs"
                       >
-                        <span>🔑</span> <span className="hidden sm:inline">Reset Pwd</span>
+                        🔑 Reset Pwd
                       </button>
                     </td>
                   </tr>
@@ -271,42 +281,38 @@ const handleRegisterUser = async (e) => {
         </div>
       </div>
 
-      {/* POP-UP MODAL BOX RESET PASSWORD */}
+      {/* ELEMEN MODAL BOX POP-UP DI BAWAH HALAMAN */}
       {showModal && selectedUser && (
-        // PERBAIKAN 4: Ditambahkan area padding aman `p-4` di wadah latar hitam luar modal agar box tidak membentur frame HP
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white p-5 sm:p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 transform transition-all scale-100">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 flex items-center gap-1.5">
-              <span>🔄</span> Ubah Password Pengguna
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 mb-4 leading-relaxed">
-              Anda akan mengganti password akun milik <strong className="text-green-700 font-semibold">{selectedUser.nama_lengkap}</strong> ({selectedUser.email}).
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">🔄 Ubah Password Pengguna</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Anda akan mengganti password akun milik <strong className="text-green-700">{selectedUser.nama_lengkap}</strong> ({selectedUser.email}).
             </p>
             <form onSubmit={handleExecuteResetPassword} className="space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Masukkan Password Baru</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Masukkan Password Baru</label>
                 <input
                   required
                   type="text"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Ketik password baru..."
-                  className="w-full border border-gray-300 px-3 py-2.5 sm:py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:outline-none text-base sm:text-sm bg-gray-50/30"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
-              {/* Tombol aksi modal adaptif penuh di mobile */}
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setSelectedUser(null); setNewPassword(''); }}
-                  className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors text-sm text-center"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg transition text-sm"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 sm:py-2 rounded-lg transition-colors disabled:opacity-50 text-sm text-center shadow-sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 text-sm"
                 >
                   {resetLoading ? 'Menyimpan...' : 'Konfirmasi Ubah'}
                 </button>
