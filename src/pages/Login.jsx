@@ -10,13 +10,27 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const parseJwt = (token) => {
-    try {
-      return JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-      return null;
-    }
-  };
+// Ganti fungsi parseJwt lama dengan versi super aman ini
+const parseJwt = (token) => {
+  try {
+    if (!token) return null;
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Gagal melakukan parse JWT token:", e);
+    return null;
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
