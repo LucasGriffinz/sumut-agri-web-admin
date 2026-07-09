@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
+// 1. IMPOR LOGO KAMU DI SINI (Sesuaikan format filenya .png / .svg)
+import logoAgri from '../assets/react.png'; // Ganti 'react.svg' dengan nama file logomu asli, misal 'logo.png'
 
 export default function Layout() {
   const navigate = useNavigate();
-  // State untuk mengontrol buka/tutup menu di HP
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
@@ -21,13 +22,25 @@ export default function Layout() {
       <nav className="bg-green-800 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Sisi Kiri: Logo / Judul */}
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold tracking-tight">Sumut Agri</h1>
-              <span className="text-green-200 text-sm hidden sm:inline">
-                Dashboard Admin
-              </span>
-            </div>
+            
+            {/* PERBAIKAN UTAMA: Bungkus Logo & Teks dengan Link ke /dashboard */}
+            <Link to="/dashboard" className="flex items-center gap-3 group focus:outline-none">
+              {/* Gambar Logo */}
+              <img 
+                src={logoAgri} 
+                alt="Logo Sumut Agri" 
+                className="h-8 w-auto object-contain group-hover:opacity-90 transition-opacity"
+              />
+              {/* Teks Judul (Sengaja disembunyikan di HP dengan 'hidden' dan muncul di layar kecil ke atas dengan 'sm:block') */}
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight hidden sm:block">
+                  Sumut Agri
+                </h1>
+                <span className="text-green-200 text-sm hidden md:inline font-normal border-l border-green-700 pl-2">
+                  Dashboard Admin
+                </span>
+              </div>
+            </Link>
 
             {/* Sisi Kanan: Menu untuk Desktop (Laptop) */}
             <div className="hidden md:flex items-center gap-6">
@@ -59,12 +72,10 @@ export default function Layout() {
                 aria-label="Toggle Menu"
               >
                 {isMenuOpen ? (
-                  // Icon Silang (X) saat menu terbuka
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : (
-                  // Icon Garis Tiga (Hamburger) saat menu tertutup
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
@@ -73,9 +84,9 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* Menu Dropdown untuk HP (Hanya muncul jika isMenuOpen = true) */}
+          {/* Menu Dropdown untuk HP */}
           {isMenuOpen && (
-            <div className="md:hidden mt-3 pt-3 border-t border-green-700 flex flex-col gap-3 pb-2 animate-fadeIn">
+            <div className="md:hidden mt-3 pt-3 border-t border-green-700 flex flex-col gap-3 pb-2">
               <Link 
                 to="/dashboard" 
                 onClick={() => setIsMenuOpen(false)}
