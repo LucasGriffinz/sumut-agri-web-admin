@@ -59,27 +59,10 @@ export default function ManajemenPengguna() {
     fetchUsers();
   }, [token, navigate]);
 
-  const handleRegisterUser = async (e) => {
-    e.preventDefault();
-    setError('');
-    loading(true);
-
-    try {
-      const cleanEmail = email.toLowerCase();
-
-      const res = await fetch(`${API_BASE}/api/admin/users?role=${role}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email: cleanEmail,
-          password: password,
-          nama_lengkap: namaLengkap,
-          kabupaten_kota: kabupatenKota || null
-        }),
-      });
+const handleRegisterUser = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true); // <--- UBAH JADI INI
 
       if (res.status === 401) {
         localStorage.removeItem('admin_token');
