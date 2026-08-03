@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
 
 export default function ManajemenProduksi() {
   const [produksi, setProduksi] = useState([]);
   const [komoditas, setKomoditas] = useState([]);
+  const [users, setUsers] = useState([]); // 🌟 State baru untuk menyimpan data Petani
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
@@ -24,25 +28,31 @@ export default function ManajemenProduksi() {
         }
       };
 
-      const [resProduksi, resKomoditas] = await Promise.all([
+      // 🌟 Fetch Produksi, Komoditas, DAN Users secara bersamaan
+      const [resProduksi, resKomoditas, resUsers] = await Promise.all([
         fetch(`${API_BASE}/api/produksi/`, fetchOptions),
-        fetch(`${API_BASE}/api/komoditas/`, fetchOptions)
+        fetch(`${API_BASE}/api/komoditas/`, fetchOptions),
+        fetch(`${API_BASE}/api/users/`, fetchOptions)
       ]);
 
-      if (resProduksi.status === 401 || resKomoditas.status === 401) {
+      if (resProduksi.status === 401 || resKomoditas.status === 401 || resUsers.status === 401) {
         localStorage.removeItem('admin_token');
         navigate('/login');
         return;
       }
 
-      if (!resProduksi.ok || !resKomoditas.ok) throw new Error('Gagal memuat data dari database');
+      if (!resProduksi.ok || !resKomoditas.ok || !resUsers.ok) {
+        throw new Error('Gagal memuat data dari database');
+      }
 
       const dataProduksi = await resProduksi.json();
       const dataKomoditas = await resKomoditas.json();
+      const dataUsers = await resUsers.json();
       
       // Urutkan dari yang terbaru
       setProduksi(dataProduksi.sort((a, b) => b.id - a.id));
       setKomoditas(dataKomoditas);
+      setUsers(dataUsers);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,7 +69,6 @@ export default function ManajemenProduksi() {
   }, [token, navigate]);
 
   // Fungsi untuk eksekusi Verifikasi (Setujui / Tolak)
-  // Fungsi untuk eksekusi Verifikasi (Setujui / Tolak)
   const handleVerifikasi = async (id, statusAksi) => {
     if (!window.confirm(`Yakin ingin mengubah status panen ini menjadi ${statusAksi.toUpperCase()}?`)) return;
     
@@ -67,9 +76,8 @@ export default function ManajemenProduksi() {
     setError('');
 
     try {
-      // 🌟 URL dan Method disesuaikan dengan FastAPI kamu
       const res = await fetch(`${API_BASE}/api/produksi/${id}/verifikasi`, {
-        method: 'PATCH', 
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -82,8 +90,7 @@ export default function ManajemenProduksi() {
         throw new Error(errData.detail || `Gagal memproses verifikasi`);
       }
 
-      // Refresh data setelah berhasil
-      fetchData();
+      fetchData(); // Refresh data setelah berhasil
     } catch (err) {
       setError(err.message);
       alert(err.message);
@@ -92,18 +99,68 @@ export default function ManajemenProduksi() {
     }
   };
 
-  // Helper untuk mendapatkan nama komoditas
+  // 🌟 Helper untuk mendapatkan NAMA PETANI dari array users
+  const getNamaPetani = (idPetani) => {
+    const user = users.find(u => u.id === idPetani);
+    return user ? user.nama_lengkap : `ID: ${idPetani}`;
+  };
+
   const getNamaKomoditas = (idKomoditas) => {
     const kmd = komoditas.find(k => k.id === idKomoditas);
     return kmd ? `${kmd.nama_komoditas} (${kmd.satuan})` : `ID: ${idKomoditas}`;
   };
 
-  // Helper untuk warna badge status
   const getStatusBadge = (status) => {
     const s = status?.toLowerCase() || 'pending';
     if (s === 'disetujui') return <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">DISETUJUI</span>;
     if (s === 'ditolak') return <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">DITOLAK</span>;
     return <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold">PENDING</span>;
+  };
+
+  // ================= 🌟 FITUR EXPORT LAPORAN =================
+  const exportPDF = () => {
+    const doc = new jsPDF('landscape'); // Menggunakan format landscape agar kolom cukup
+    doc.text("Laporan Data Panen (Sumut Agri)", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+
+    const tableColumn = ["ID", "Nama Petani", "Komoditas", "Jumlah Panen", "Tgl Panen", "Lokasi", "Status"];
+    const tableRows = produksi.map(p => [
+      `#${p.id}`,
+      getNamaPetani(p.id_petani),
+      getNamaKomoditas(p.id_komoditas),
+      `${p.jumlah_panen} (Luas: ${p.luas_lahan || '-'} Ha)`,
+      new Date(p.tanggal_panen).toLocaleDateString('id-ID'),
+      p.lokasi || '-',
+      (p.status || 'pending').toUpperCase()
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 28,
+      theme: 'grid',
+      headStyles: { fillColor: [46, 125, 50] } // Hijau Tema
+    });
+    doc.save("Laporan_Data_Panen.pdf");
+  };
+
+  const exportExcel = () => {
+    const excelData = produksi.map(p => ({
+      "ID Panen": p.id,
+      "Nama Petani": getNamaPetani(p.id_petani),
+      "Komoditas": getNamaKomoditas(p.id_komoditas),
+      "Jumlah Panen": p.jumlah_panen,
+      "Luas Lahan (Ha)": p.luas_lahan || '-',
+      "Tanggal Panen": new Date(p.tanggal_panen).toLocaleDateString('id-ID'),
+      "Lokasi Wilayah": p.lokasi || '-',
+      "Status Verifikasi": (p.status || 'pending').toUpperCase()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Panen");
+    XLSX.writeFile(workbook, "Laporan_Data_Panen.xlsx");
   };
 
   if (loading) {
@@ -112,7 +169,19 @@ export default function ManajemenProduksi() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-green-800 tracking-tight">Verifikasi & Laporan Panen</h2>
+      {/* 🌟 BARIS JUDUL & TOMBOL EXPORT */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-green-800 tracking-tight">Verifikasi & Laporan Panen</h2>
+        
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={exportExcel} className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition">
+            📊 Export Excel
+          </button>
+          <button onClick={exportPDF} className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition">
+            📄 Export PDF
+          </button>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-lg text-sm">
@@ -151,9 +220,12 @@ export default function ManajemenProduksi() {
                       <div className="text-gray-500 text-xs mt-0.5">Total: <span className="font-medium">{p.jumlah_panen}</span> | Luas: {p.luas_lahan || '-'} Ha</div>
                     </td>
                     
+                    {/* 🌟 NAMA PETANI MUNCUL DI SINI */}
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div className="text-gray-900">{new Date(p.tanggal_panen).toLocaleDateString('id-ID')}</div>
-                      <div className="text-gray-500 text-xs mt-0.5">Petani ID: <span className="font-medium text-green-700">{p.id_petani}</span></div>
+                      <div className="text-gray-500 text-xs mt-0.5">
+                        Petani: <span className="font-semibold text-green-700">{getNamaPetani(p.id_petani)}</span>
+                      </div>
                     </td>
                     
                     <td className="px-4 py-3.5 text-gray-600 text-xs max-w-[200px] truncate" title={p.lokasi}>
@@ -165,7 +237,6 @@ export default function ManajemenProduksi() {
                     </td>
                     
                     <td className="px-4 py-3.5 whitespace-nowrap text-center">
-                      {/* Sembunyikan tombol jika status sudah tidak pending */}
                       {p.status?.toLowerCase() === 'pending' ? (
                         <div className="flex justify-center gap-2">
                           <button
