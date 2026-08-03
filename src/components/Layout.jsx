@@ -52,9 +52,12 @@ export default function Layout() {
               </Link>
               <Link to="/komoditas" className="hover:text-green-200 transition text-sm font-medium">
                 Komoditas
+              </Link>
               <Link to="/harga" className="hover:text-green-200 transition text-sm font-medium">
                 Harga Harian
               </Link>
+              <Link to="/produksi" className="hover:text-green-200 transition text-sm font-medium">
+                Data Panen
               </Link>
               <span className="text-green-300 text-sm font-medium border-l border-green-700 pl-4">
                 {userProfile.email || 'Admin'}
@@ -117,6 +120,13 @@ export default function Layout() {
                 className="hover:bg-green-700 px-3 py-2 rounded transition text-sm font-medium"
               >
                 Harga Harian
+              </Link>
+              <Link 
+                to="/produksi" 
+                onClick={() => setIsMenuOpen(false)}
+                className="hover:bg-green-700 px-3 py-2 rounded transition text-sm font-medium"
+              >
+                Data Panen
               </Link>
               
               <div className="border-t border-green-700 my-1"></div>

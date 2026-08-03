@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ManajemenPengguna from './pages/ManajemenPengguna';
 import ManajemenKomoditas from './pages/ManajemenKomoditas';
 import ManajemenHarga from './pages/ManajemenHarga';
+import ManajemenProduksi from './pages/ManajemenProduksi';
 import Layout from './components/Layout';
 
 
@@ -48,6 +49,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pengguna" element={<ManajemenPengguna />} />
             <Route path="/komoditas" element={<ManajemenKomoditas />} />
+            <Route path="/harga" element={<ManajemenHarga />} /> {/* 🌟 INI TAMBAHAN BARU */}
+            <Route path="/produksi" element={<ManajemenProduksi />} />  
           </Route>
         </Route>
 
@@ -56,6 +59,7 @@ function App() {
           <Route path="/pengguna" element={<ManajemenPengguna />} />
           <Route path="/komoditas" element={<ManajemenKomoditas />} />
           <Route path="/harga" element={<ManajemenHarga />} /> {/* 🌟 INI TAMBAHAN BARU */}
+          <Route path="/produksi" element={<ManajemenProduksi />} />
         </Route>
         
         {/* Jalur Fallback: Jika URL acak/tidak ditemukan, alihkan otomatis */}
