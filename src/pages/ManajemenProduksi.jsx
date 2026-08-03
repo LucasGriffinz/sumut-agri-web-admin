@@ -59,6 +59,7 @@ export default function ManajemenProduksi() {
   }, [token, navigate]);
 
   // Fungsi untuk eksekusi Verifikasi (Setujui / Tolak)
+  // Fungsi untuk eksekusi Verifikasi (Setujui / Tolak)
   const handleVerifikasi = async (id, statusAksi) => {
     if (!window.confirm(`Yakin ingin mengubah status panen ini menjadi ${statusAksi.toUpperCase()}?`)) return;
     
@@ -66,8 +67,9 @@ export default function ManajemenProduksi() {
     setError('');
 
     try {
+      // 🌟 URL dan Method disesuaikan dengan FastAPI kamu
       const res = await fetch(`${API_BASE}/api/produksi/${id}/verifikasi`, {
-        method: 'PUT', // Sesuaikan dengan method di backend (PUT atau POST)
+        method: 'PATCH', 
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
