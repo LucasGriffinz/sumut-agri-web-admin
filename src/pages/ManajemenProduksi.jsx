@@ -118,31 +118,39 @@ export default function ManajemenProduksi() {
   };
 
   // ================= 🌟 FITUR EXPORT LAPORAN =================
+  // ================= 🌟 FITUR EXPORT LAPORAN =================
   const exportPDF = () => {
-    const doc = new jsPDF('landscape'); // Menggunakan format landscape agar kolom cukup
-    doc.text("Laporan Data Panen (Sumut Agri)", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+    try {
+      const doc = new jsPDF('landscape'); 
+      doc.text("Laporan Data Panen (Sumut Agri)", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
 
-    const tableColumn = ["ID", "Nama Petani", "Komoditas", "Jumlah Panen", "Tgl Panen", "Lokasi", "Status"];
-    const tableRows = produksi.map(p => [
-      `#${p.id}`,
-      getNamaPetani(p.id_petani),
-      getNamaKomoditas(p.id_komoditas),
-      `${p.jumlah_panen} (Luas: ${p.luas_lahan || '-'} Ha)`,
-      new Date(p.tanggal_panen).toLocaleDateString('id-ID'),
-      p.lokasi || '-',
-      (p.status || 'pending').toUpperCase()
-    ]);
+      const tableColumn = ["ID", "Nama Petani", "Komoditas", "Jumlah Panen", "Tgl Panen", "Lokasi", "Status"];
+      const tableRows = produksi.map(p => [
+        `#${p.id}`,
+        getNamaPetani(p.id_petani),
+        getNamaKomoditas(p.id_komoditas),
+        `${p.jumlah_panen} (Luas: ${p.luas_lahan || '-'} Ha)`,
+        new Date(p.tanggal_panen).toLocaleDateString('id-ID'),
+        p.lokasi || '-',
+        (p.status || 'pending').toUpperCase()
+      ]);
 
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 28,
-      theme: 'grid',
-      headStyles: { fillColor: [46, 125, 50] } // Hijau Tema
-    });
-    doc.save("Laporan_Data_Panen.pdf");
+      // 🌟 PERUBAHAN DI SINI: Panggil autoTable secara langsung
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 28,
+        theme: 'grid',
+        headStyles: { fillColor: [46, 125, 50] } // Hijau Tema
+      });
+
+      doc.save("Laporan_Data_Panen.pdf");
+    } catch (err) {
+      console.error("Gagal membuat PDF:", err);
+      alert("Terjadi kesalahan saat membuat PDF. Coba periksa console browser.");
+    }
   };
 
   const exportExcel = () => {
