@@ -4,7 +4,9 @@ import Login from "./pages/Login";
 import Dashboard from './pages/Dashboard';
 import ManajemenPengguna from './pages/ManajemenPengguna';
 import ManajemenKomoditas from './pages/ManajemenKomoditas';
+import ManajemenHarga from './pages/ManajemenHarga';
 import Layout from './components/Layout';
+
 
 // Komponen Tambahan: Memaksa layar HP/Laptop otomatis scroll ke atas saat pindah halaman
 const ScrollToTop = () => {
@@ -47,6 +49,13 @@ function App() {
             <Route path="/pengguna" element={<ManajemenPengguna />} />
             <Route path="/komoditas" element={<ManajemenKomoditas />} />
           </Route>
+        </Route>
+
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/pengguna" element={<ManajemenPengguna />} />
+          <Route path="/komoditas" element={<ManajemenKomoditas />} />
+          <Route path="/harga" element={<ManajemenHarga />} /> {/* 🌟 INI TAMBAHAN BARU */}
         </Route>
         
         {/* Jalur Fallback: Jika URL acak/tidak ditemukan, alihkan otomatis */}
